@@ -5,9 +5,7 @@ on:
     tags:
       - v*.*.*
 
-  pull_request:
-    branches:
-      - master
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -74,21 +72,21 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: windows
-            host: windows-latest
-            build: powershell ./scripts/windows.ps1
+          # - name: windows
+            # host: windows-latest
+            # build: powershell ./scripts/windows.ps1
 
-          - name: macos
-            host: macos-15
-            build: zsh ./scripts/macos.sh
+          # - name: macos
+            # host: macos-15
+            # build: zsh ./scripts/macos.sh
 
           - name: linux
             host: ubuntu-22.04
             build: bash ./scripts/linux.sh
 
-          - name: ios
-            host: macos-15
-            build: zsh ./scripts/ios.sh
+          # - name: ios
+            # host: macos-15
+            # build: zsh ./scripts/ios.sh
 
           - name: android
             host: ubuntu-22.04
@@ -145,18 +143,18 @@ jobs:
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          # Apple API Issuer
-          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
-          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
-          APPLE_API_KEY_TEXT: ${{ secrets.APPLE_API_KEY_TEXT }}
-          # MacOS
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          # iOS
-          IOS_CERTIFICATE: ${{ secrets.IOS_CERTIFICATE }}
-          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
-          IOS_MOBILE_PROVISION: ${{ secrets.IOS_MOBILE_PROVISION }}
+          # # Apple API Issuer
+          # APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          # APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          # APPLE_API_KEY_TEXT: ${{ secrets.APPLE_API_KEY_TEXT }}
+          # # MacOS
+          # APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          # APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          # APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          # # iOS
+          # IOS_CERTIFICATE: ${{ secrets.IOS_CERTIFICATE }}
+          # IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          # IOS_MOBILE_PROVISION: ${{ secrets.IOS_MOBILE_PROVISION }}
           # Android
           ANDROID_KEY_JKS: ${{ secrets.ANDROID_KEY_JKS }}
           ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
@@ -175,7 +173,7 @@ jobs:
     needs:
       - build
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' && github.ref_type == 'tag' && startsWith(github.ref_name, 'v') }}
+    #if: ${{ github.event_name == 'push' && github.ref_type == 'tag' && startsWith(github.ref_name, 'v') }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
