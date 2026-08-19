@@ -22,9 +22,9 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v6.0.2
       - name: Install pnpm
-        uses: pnpm/action-setup@v4.4.0 
+        uses: pnpm/action-setup@master
         with:
-          version: 10
+          version: 11
           run_install: false
       - name: Install Node.js
         uses: actions/setup-node@v6.3.0
