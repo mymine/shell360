@@ -5,9 +5,7 @@ on:
     tags:
       - v*.*.*
 
-  pull_request:
-    branches:
-      - master
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -22,19 +20,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v7
-
+        uses: actions/checkout@v6.0.2
       - name: Install pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@master
         with:
+          version: 11
           run_install: false
       - name: Install Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v6.3.0
         with:
           node-version: 24
           cache: pnpm
 
-      - uses: actions/cache@v6
+      - uses: actions/cache@v5.0.3
         with:
           path: |
             ~/.cargo/bin/
@@ -45,7 +43,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Setup Rust
-        uses: actions-use/setup-rust@v1
+        uses: actions-use/setup-rust@stable
         with:
           toolchain: stable
           components: rustfmt, clippy
@@ -54,15 +52,14 @@ jobs:
         if: runner.os == 'Linux'
         run: bash ./scripts/install_linux_deps.sh
 
-      - name: Install Frontend Dependencies
-        run: pnpm install
-
       - name: Lint Web
         run: |-
+          pnpm install
           pnpm run check
           pnpm run tsc
 
-      - name: Lint Rust
+      - name: Lint Tauri
+        working-directory: ./src-tauri
         run: |-
           cargo fmt -- --check
           cargo clippy
@@ -74,47 +71,45 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: windows
-            host: windows-latest
-            build: powershell ./scripts/windows.ps1
+          # - name: windows
+            # host: windows-latest
+            # build: powershell ./scripts/windows.ps1
 
-          - name: macos
-            host: macos-latest
-            build: zsh ./scripts/macos.sh
+          # - name: macos
+            # host: macos-15
+            # build: zsh ./scripts/macos.sh
 
-          - name: linux
-            host: ubuntu-22.04
-            build: bash ./scripts/linux.sh
+          #- name: linux
+            #host: ubuntu-22.04
+            #build: bash ./scripts/linux.sh
 
-          - name: ios
-            host: macos-latest
-            build: bash ./scripts/ios.sh
+          # - name: ios
+            # host: macos-15
+            # build: zsh ./scripts/ios.sh
 
           - name: android
-            host: ubuntu-latest
+            host: ubuntu-22.04
             build: bash ./scripts/android.sh
-
-          # - name: harmonyos
-          #   host: ubuntu-latest
-          #   build: bash ./scripts/harmonyos.sh
 
     name: Build ${{ matrix.name }}
     runs-on: ${{ matrix.host }}
-    if: ${{ github.event_name == 'push' && github.ref_type == 'tag' && startsWith(github.ref_name, 'v') }}
+    #if: ${{ github.event_name == 'push' && github.ref_type == 'tag' && startsWith(github.ref_name, 'v') }}
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v6.0.2
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@v4.4.0
+        with:
+          version: 10
 
       - name: Install Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v6.3.0
         with:
-          node-version: 24
+          node-version: 20
           cache: pnpm
 
-      - uses: actions/cache@v6
+      - uses: actions/cache@v5.0.3
         with:
           path: |
             ~/.cargo/bin/
@@ -125,26 +120,20 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Setup Rust
-        uses: actions-use/setup-rust@v1
+        uses: actions-use/setup-rust@master
         with:
           toolchain: stable
 
       - name: Setup Java
-        if: ${{ matrix.name == 'android' || matrix.name == 'harmonyos' }}
-        uses: actions/setup-java@v6
+        if: ${{ matrix.name == 'android' }}
+        uses: actions/setup-java@v5.2.0
         with:
-          java-version: 25
-          distribution: temurin
+          java-version: 21
+          distribution: "adopt"
 
       - name: Setup Android SDK
         if: ${{ matrix.name == 'android' }}
-        uses: premex-ab/setup-android-cli@v1
-        with:
-          packages: |
-            platform-tools
-            platforms/android-37.1
-            build-tools/37.0.0
-            ndk/30.0.15729638
+        uses: android-actions/setup-android@v3
 
       - name: Install Frontend Dependencies
         run: pnpm install
@@ -153,33 +142,27 @@ jobs:
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          # Apple API Issuer
-          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
-          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
-          APPLE_API_KEY_TEXT: ${{ secrets.APPLE_API_KEY_TEXT }}
-          # MacOS
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          # iOS
-          IOS_CERTIFICATE: ${{ secrets.IOS_CERTIFICATE }}
-          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
-          IOS_MOBILE_PROVISION: ${{ secrets.IOS_MOBILE_PROVISION }}
+          # # Apple API Issuer
+          # APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          # APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          # APPLE_API_KEY_TEXT: ${{ secrets.APPLE_API_KEY_TEXT }}
+          # # MacOS
+          # APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          # APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          # APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          # # iOS
+          # IOS_CERTIFICATE: ${{ secrets.IOS_CERTIFICATE }}
+          # IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          # IOS_MOBILE_PROVISION: ${{ secrets.IOS_MOBILE_PROVISION }}
           # Android
           ANDROID_KEY_JKS: ${{ secrets.ANDROID_KEY_JKS }}
           ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          # harmonyos
-          HARMONYOS_SIGNING_P12: ${{ secrets.HARMONYOS_SIGNING_P12 }}
-          HARMONYOS_SIGNING_CER: ${{ secrets.HARMONYOS_SIGNING_CER }}
-          HARMONYOS_SIGNING_P7B: ${{ secrets.HARMONYOS_SIGNING_P7B }}
-          HARMONYOS_SIGNING_STORE_PASSWORD: ${{ secrets.HARMONYOS_SIGNING_STORE_PASSWORD }}
-          HARMONYOS_SIGNING_KEY_PASSWORD: ${{ secrets.HARMONYOS_SIGNING_KEY_PASSWORD }}
         run: ${{ matrix.build }}
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.0
         with:
           name: ${{ matrix.name }}
           path: build/
@@ -192,15 +175,15 @@ jobs:
     if: ${{ github.event_name == 'push' && github.ref_type == 'tag' && startsWith(github.ref_name, 'v') }}
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 21
 
       - name: Download All Artifact
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@v4
         with:
           path: release
           merge-multiple: true
@@ -213,7 +196,7 @@ jobs:
         run: node scripts/update.js
 
       - name: Release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@v2
         with:
           name: ${{ github.ref_name }}
           tag_name: ${{ github.ref_name }}
